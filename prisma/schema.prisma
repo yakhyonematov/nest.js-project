@@ -19,3 +19,10 @@ model User {
   email String
   age Int
 }
+
+model User2 {
+  id Int @id @default(autoincrement())
+  surname String
+  job String
+  country String
+}
