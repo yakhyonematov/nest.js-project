@@ -1,20 +1,27 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from 'src/prisma/prisma.service';
-
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
+import { RegisterDto } from './dto/register-dto';
+import { LoginDto } from './dto/login-dto';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsersService {
-  private users = [];
-  private idCounter = 1;
+  constructor(private readonly prisma: PrismaService) {}
 
   // GET - barcha userlarni olish
-  findAll() {
-    return this.users;
+  async findAll() {
+    return this.prisma.user.findMany();
   }
 
   // GET BY ID - bitta userni olish
-  findOne(id: number) {
-    const user = this.users.find((u) => u.id === id);
+  async findOne(id: number) {
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+    });
     if (!user) {
       throw new NotFoundException(`User with id ${id} not found`);
     }
@@ -22,41 +29,114 @@ export class UsersService {
   }
 
   // POST - yangi user qo'shish
-  create(data: { name: string; age: number; email: string; password: string }) {
-    const newUser = {
-      id: this.idCounter++,
-      name: data.name,
-      age: data.age,
-      email: data.email,
-      password: data.password,
-    };
-    this.users.push(newUser);
-    return newUser;
+  async create(data: { name: string; email: string; password: string }) {
+    // Email band emasligini tekshirish
+    const existingUser = await this.prisma.user.findUnique({
+      where: { email: data.email },
+    });
+    if (existingUser) {
+      throw new BadRequestException(
+        "Bu email orqali avval foydalanuvchi ro'yxatdan o'tgan!",
+      );
+    }
+
+    const hashedPassword = await bcrypt.hash(data.password, 10);
+    return this.prisma.user.create({
+      data: {
+        ...data,
+        password: hashedPassword,
+      },
+    });
   }
 
-  // PATCH - userni ma'lumom bir qismini yangilash yangilash
-  update(
+  // PATCH - userni ma'lumotining bir qismini yangilash
+  async update(
     id: number,
     data: Partial<{
       name: string;
-      age: number;
       email: string;
       password: string;
     }>,
   ) {
-    const user = this.findOne(id);
-    Object.assign(user, data);
-    return user;
+    // User mavjudligini tekshirish
+    await this.findOne(id);
+
+    const updatedData = { ...data };
+    if (data.password) {
+      updatedData.password = await bcrypt.hash(data.password, 10);
+    }
+
+    if (data.email) {
+      const existingUser = await this.prisma.user.findUnique({
+        where: { email: data.email },
+      });
+      if (existingUser && existingUser.id !== id) {
+        throw new BadRequestException(
+          'Bu email boshqa foydalanuvchi tomonidan band qilingan!',
+        );
+      }
+    }
+
+    return this.prisma.user.update({
+      where: { id },
+      data: updatedData,
+    });
   }
 
   // DELETE - userni o'chirish
-  remove(id: number) {
-    const index = this.users.findIndex((u) => u.id === id);
-    if (index === -1) {
-      throw new NotFoundException(`User with id ${id} not found`);
+  async remove(id: number) {
+    await this.findOne(id);
+    return this.prisma.user.delete({
+      where: { id },
+    });
+  }
+
+  // REGISTER - foydalanuvchini ro'yxatdan o'tkazish
+  async register(body: RegisterDto) {
+    const existingUser = await this.prisma.user.findUnique({
+      where: {
+        email: body.email,
+      },
+    });
+    if (existingUser) {
+      throw new BadRequestException(
+        "Bu email orqali avval foydalanuvchi ro'yxatdan o'tgan!",
+      );
     }
-    const deletedUser = this.users[index];
-    this.users.splice(index, 1);
-    return deletedUser;
+
+    const hashedPassword = await bcrypt.hash(body.password, 10);
+    return this.prisma.user.create({
+      data: {
+        name: body.name,
+        email: body.email,
+        password: hashedPassword,
+      },
+    });
+  }
+
+  // LOGIN - foydalanuvchini tizimga kiritish
+  async login(body: LoginDto) {
+    const user = await this.prisma.user.findUnique({
+      where: {
+        email: body.email,
+      },
+    });
+
+    if (!user) {
+      throw new BadRequestException("Email yoki parol noto'g'ri!");
+    }
+
+    const isPasswordValid = await bcrypt.compare(body.password, user.password);
+    if (!isPasswordValid) {
+      throw new BadRequestException("Email yoki parol noto'g'ri!");
+    }
+
+    // Parolni xavfsizlik nuqtai nazaridan qaytarmaymiz
+    const result = { ...user };
+    delete (result as Partial<typeof user>).password;
+    return {
+      message: 'Tizimga muvaffaqiyatli kirdingiz!',
+      user: result,
+    };
   }
 }

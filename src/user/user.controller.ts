@@ -8,7 +8,9 @@ import {
   Body,
   ParseIntPipe,
 } from '@nestjs/common';
-import { UsersService } from './users.service';
+import { UsersService } from './user.service';
+import { RegisterDto } from './dto/register-dto';
+import { LoginDto } from './dto/login-dto';
 
 @Controller('users')
 export class UsersController {
@@ -29,12 +31,21 @@ export class UsersController {
     @Body()
     body: {
       name: string;
-      age: number;
       email: string;
       password: string;
     },
   ) {
     return this.usersService.create(body);
+  }
+
+  @Post('register')
+  register(@Body() body: RegisterDto) {
+    return this.usersService.register(body);
+  }
+
+  @Post('login')
+  login(@Body() body: LoginDto) {
+    return this.usersService.login(body);
   }
 
   @Patch(':id')
@@ -43,7 +54,6 @@ export class UsersController {
     @Body()
     body: Partial<{
       name: string;
-      age: number;
       email: string;
       password: string;
     }>,
