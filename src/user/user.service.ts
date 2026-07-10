@@ -7,10 +7,14 @@ import { PrismaService } from '../prisma/prisma.service';
 import { RegisterDto } from './dto/register-dto';
 import { LoginDto } from './dto/login-dto';
 import * as bcrypt from 'bcrypt';
+import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
 export class UsersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly jwtService: JwtService,
+  ) {}
 
   // GET - barcha userlarni olish
   async findAll() {
@@ -134,8 +138,13 @@ export class UsersService {
     // Parolni xavfsizlik nuqtai nazaridan qaytarmaymiz
     const result = { ...user };
     delete (result as Partial<typeof user>).password;
+
+    const payload = { sub: user.id, email: user.email, name: user.name };
+    const access_token = await this.jwtService.signAsync(payload);
+
     return {
       message: 'Tizimga muvaffaqiyatli kirdingiz!',
+      access_token,
       user: result,
     };
   }
