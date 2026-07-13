@@ -4,7 +4,10 @@ import {
   Length,
   MinLength,
   IsLowercase,
+  IsOptional,
+  IsEnum,
 } from 'class-validator';
+import { Role } from '@prisma/client';
 
 export class RegisterDto {
   @IsString({ message: 'Ism matn korinishida bolishi shart!' })
@@ -21,4 +24,8 @@ export class RegisterDto {
 
   @MinLength(8, { message: 'Parolga eng oz 8 ta belgi kiritilsin!' })
   password: string;
+
+  @IsOptional()
+  @IsEnum(Role, { message: "Rol noto'g'ri kiritildi!" })
+  role?: Role;
 }

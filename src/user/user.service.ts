@@ -8,6 +8,7 @@ import { RegisterDto } from './dto/register-dto';
 import { LoginDto } from './dto/login-dto';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
+import { Role } from '@prisma/client';
 
 @Injectable()
 export class UsersService {
@@ -33,7 +34,12 @@ export class UsersService {
   }
 
   // POST - yangi user qo'shish
-  async create(data: { name: string; email: string; password: string }) {
+  async create(data: {
+    name: string;
+    email: string;
+    password: string;
+    role?: Role;
+  }) {
     // Email band emasligini tekshirish
     const existingUser = await this.prisma.user.findUnique({
       where: { email: data.email },
@@ -60,6 +66,7 @@ export class UsersService {
       name: string;
       email: string;
       password: string;
+      role: Role;
     }>,
   ) {
     // User mavjudligini tekshirish
@@ -114,6 +121,7 @@ export class UsersService {
         name: body.name,
         email: body.email,
         password: hashedPassword,
+        role: body.role || 'USER',
       },
     });
   }
@@ -139,7 +147,12 @@ export class UsersService {
     const result = { ...user };
     delete (result as Partial<typeof user>).password;
 
-    const payload = { sub: user.id, email: user.email, name: user.name };
+    const payload = {
+      sub: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+    };
     const access_token = await this.jwtService.signAsync(payload);
 
     return {

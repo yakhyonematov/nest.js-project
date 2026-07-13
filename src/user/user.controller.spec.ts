@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { UsersController } from './user.controller';
 import { UsersService } from './user.service';
+import { JwtService } from '@nestjs/jwt';
 
 describe('UsersController', () => {
   let controller: UsersController;
@@ -19,6 +20,12 @@ describe('UsersController', () => {
             remove: jest.fn(),
             register: jest.fn(),
             login: jest.fn(),
+          },
+        },
+        {
+          provide: JwtService,
+          useValue: {
+            verifyAsync: jest.fn(),
           },
         },
       ],

@@ -13,8 +13,12 @@ import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { ProductsService } from './products.service';
 import { JwtAuthGuard } from '../user/jwt-auth.guard';
+import { RolesGuard } from '../user/roles.guard';
+import { Roles } from '../user/roles.decorator';
+import { Role } from '@prisma/client';
 
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(Role.ADMIN, Role.SUPERADMIN)
 @Controller('products')
 export class ProductsController {
   constructor(private productsService: ProductsService) {}
