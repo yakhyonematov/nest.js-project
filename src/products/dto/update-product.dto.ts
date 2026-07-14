@@ -12,9 +12,14 @@ export class UpdateProductDto {
   @IsString()
   @Length(3, 30)
   title?: string;
+
   @IsOptional()
   @IsNumber()
   @Min(1)
   @Max(100000)
   price?: number;
+
+  @IsOptional()
+  @IsString()
+  img?: string;
 }

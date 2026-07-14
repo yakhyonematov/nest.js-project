@@ -28,4 +28,8 @@ export class RegisterDto {
   @IsOptional()
   @IsEnum(Role, { message: "Rol noto'g'ri kiritildi!" })
   role?: Role;
+
+  @IsOptional()
+  @IsString({ message: "Rasm manzili matn ko'rinishida bo'lishi shart!" })
+  img?: string;
 }

@@ -17,9 +17,20 @@ export class UsersService {
     private readonly jwtService: JwtService,
   ) {}
 
+  private formatUser(user: any) {
+    if (!user) return null;
+    const result = { ...user };
+    delete result.password;
+    if (result.img) {
+      result.img = `http://localhost:3000/uploads/${result.img}`;
+    }
+    return result;
+  }
+
   // GET - barcha userlarni olish
   async findAll() {
-    return this.prisma.user.findMany();
+    const users = await this.prisma.user.findMany();
+    return users.map((user) => this.formatUser(user));
   }
 
   // GET BY ID - bitta userni olish
@@ -30,7 +41,7 @@ export class UsersService {
     if (!user) {
       throw new NotFoundException(`User with id ${id} not found`);
     }
-    return user;
+    return this.formatUser(user);
   }
 
   // POST - yangi user qo'shish
@@ -38,6 +49,7 @@ export class UsersService {
     name: string;
     email: string;
     password: string;
+    img?: string;
     role?: Role;
   }) {
     // Email band emasligini tekshirish
@@ -51,12 +63,13 @@ export class UsersService {
     }
 
     const hashedPassword = await bcrypt.hash(data.password, 10);
-    return this.prisma.user.create({
+    const user = await this.prisma.user.create({
       data: {
         ...data,
         password: hashedPassword,
       },
     });
+    return this.formatUser(user);
   }
 
   // PATCH - userni ma'lumotining bir qismini yangilash
@@ -66,11 +79,17 @@ export class UsersService {
       name: string;
       email: string;
       password: string;
+      img: string;
       role: Role;
     }>,
   ) {
     // User mavjudligini tekshirish
-    await this.findOne(id);
+    const existingUser = await this.prisma.user.findUnique({
+      where: { id },
+    });
+    if (!existingUser) {
+      throw new NotFoundException(`User with id ${id} not found`);
+    }
 
     const updatedData = { ...data };
     if (data.password) {
@@ -78,28 +97,35 @@ export class UsersService {
     }
 
     if (data.email) {
-      const existingUser = await this.prisma.user.findUnique({
+      const emailCheck = await this.prisma.user.findUnique({
         where: { email: data.email },
       });
-      if (existingUser && existingUser.id !== id) {
+      if (emailCheck && emailCheck.id !== id) {
         throw new BadRequestException(
           'Bu email boshqa foydalanuvchi tomonidan band qilingan!',
         );
       }
     }
 
-    return this.prisma.user.update({
+    const user = await this.prisma.user.update({
       where: { id },
       data: updatedData,
     });
+    return this.formatUser(user);
   }
 
   // DELETE - userni o'chirish
   async remove(id: number) {
-    await this.findOne(id);
-    return this.prisma.user.delete({
+    const existingUser = await this.prisma.user.findUnique({
       where: { id },
     });
+    if (!existingUser) {
+      throw new NotFoundException(`User with id ${id} not found`);
+    }
+    const user = await this.prisma.user.delete({
+      where: { id },
+    });
+    return this.formatUser(user);
   }
 
   // REGISTER - foydalanuvchini ro'yxatdan o'tkazish
@@ -116,14 +142,16 @@ export class UsersService {
     }
 
     const hashedPassword = await bcrypt.hash(body.password, 10);
-    return this.prisma.user.create({
+    const user = await this.prisma.user.create({
       data: {
         name: body.name,
         email: body.email,
         password: hashedPassword,
+        img: body.img,
         role: body.role || 'USER',
       },
     });
+    return this.formatUser(user);
   }
 
   // LOGIN - foydalanuvchini tizimga kiritish
@@ -143,9 +171,7 @@ export class UsersService {
       throw new BadRequestException("Email yoki parol noto'g'ri!");
     }
 
-    // Parolni xavfsizlik nuqtai nazaridan qaytarmaymiz
-    const result = { ...user };
-    delete (result as Partial<typeof user>).password;
+    const result = this.formatUser(user);
 
     const payload = {
       sub: user.id,
@@ -160,5 +186,21 @@ export class UsersService {
       access_token,
       user: result,
     };
+  }
+
+  // UPDATE IMAGE - foydalanuvchi rasmini yangilash
+  async updateImage(id: number, filename: string) {
+    const existingUser = await this.prisma.user.findUnique({
+      where: { id },
+    });
+    if (!existingUser) {
+      throw new NotFoundException(`User with id ${id} not found`);
+    }
+
+    const user = await this.prisma.user.update({
+      where: { id },
+      data: { img: filename },
+    });
+    return this.formatUser(user);
   }
 }

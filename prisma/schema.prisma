@@ -11,25 +11,27 @@ model Product {
   id    Int    @id @default(autoincrement())
   title String
   price Float
+  img   String?
+}
+
+model User {
+  id       Int    @id @default(autoincrement())
+  name     String
+  email    String @unique
+  password String
+  img      String?
+  role     Role   @default(USER)
+}
+
+model User2 {
+  id      Int    @id @default(autoincrement())
+  surname String
+  job     String
+  country String
 }
 
 enum Role {
   USER
   ADMIN
   SUPERADMIN
-}
-
-model User {
-  id Int @id @default(autoincrement())
-  name String
-  email String @unique
-  password String
-  role Role @default(USER)
-}
-
-model User2 {
-  id Int @id @default(autoincrement())
-  surname String
-  job String
-  country String
 }

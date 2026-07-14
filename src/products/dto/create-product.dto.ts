@@ -5,6 +5,7 @@ import {
   IsNumber,
   Min,
   Max,
+  IsOptional,
 } from 'class-validator';
 
 export class CreateProductDto {
@@ -19,4 +20,8 @@ export class CreateProductDto {
   @Min(1, { message: 'Min narx: 1' })
   @Max(100000, { message: 'Max narx: 100000' })
   price: number;
+
+  @IsString({ message: 'Image must be text' })
+  @IsOptional()
+  img?: string;
 }
