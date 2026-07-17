@@ -8,9 +8,11 @@ import {
   Param,
   ParseIntPipe,
   UseGuards,
+  Query,
 } from '@nestjs/common';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
+import { GetProductsQueryDto } from './dto/get-products-query.dto';
 import { ProductsService } from './products.service';
 import { JwtAuthGuard } from '../user/jwt-auth.guard';
 import { RolesGuard } from '../user/roles.guard';
@@ -24,8 +26,8 @@ export class ProductsController {
   constructor(private productsService: ProductsService) {}
 
   @Get()
-  getProducts() {
-    return this.productsService.getProducts();
+  getProducts(@Query() query: GetProductsQueryDto) {
+    return this.productsService.getProducts(query);
   }
 
   @Get(':id')
