@@ -4,6 +4,8 @@ import { AppService } from './app.service';
 import { ProductsModule } from './products/products.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { UsersModule } from './user/user.module';
+import { StudentModule } from './student/student.module';
+import { CourseModule } from './course/course.module';
 import { JwtModule } from '@nestjs/jwt';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
@@ -22,6 +24,8 @@ import { join } from 'path';
     UsersModule,
     ProductsModule,
     PrismaModule,
+    StudentModule,
+    CourseModule,
   ],
   controllers: [AppController],
   providers: [AppService],

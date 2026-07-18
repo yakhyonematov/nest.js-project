@@ -35,3 +35,32 @@ enum Role {
   ADMIN
   SUPERADMIN
 }
+
+model Group {
+  id       Int       @id @default(autoincrement())
+  name     String
+  students Student[]
+}
+
+model Student {
+  id      Int      @id @default(autoincrement())
+  name    String
+  groupId Int?
+  group   Group?   @relation(fields: [groupId], references: [id])
+  courses Course[]
+}
+
+model Course {
+  id       Int       @id @default(autoincrement())
+  title    String
+  students Student[]
+  lessons  Lesson[]
+}
+
+model Lesson {
+  id       Int    @id @default(autoincrement())
+  title    String
+  courseId Int
+  course   Course @relation(fields: [courseId], references: [id])
+}
+
